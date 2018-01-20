@@ -5,10 +5,6 @@
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 
 <script>
-///dus voortaan direct vanuit de github map werken.
-//nu heb ik iets gewijzigd in de tekst.
-//hij ziet gelijk oh! je hebt main.html gewijzigd.
-//dus kan ik commit + push to/sync doen
 var map;
 var Amersfoort;
 
@@ -42,9 +38,7 @@ function drawLine(siteName, startLat,startLong,endLat,endLong)
 	//Create markers
 	markerOne = new google.maps.Marker({position:locationOne});
 	markerTwo = new google.maps.Marker({position:locationTwo});
-	//Laat markers zien
-	/*markerOne.setMap(map);
-	markerTwo.setMap(map);*/
+
 	//voeg markers aan de lijst(array) toe
 	_markers.push(markerOne);
 	_markers.push(markerTwo); 
@@ -69,7 +63,6 @@ function getAverageData(regelnummer)
    success:function(data)
    {
 		var average_data = data.split(/\r?\n|\r/);
-			//employee_data.length
 		var prevValue;
 		var realCounter = 0;
         var tableData = '<tr><th>vehicleFlowRate</th><th>averageVehicleSpeed_numberOfInputValues</th><th>averageVehicleSpeed_value</th></tr>';
@@ -128,9 +121,6 @@ function lineClicked(flightpath,lineCount)
 		 var lineLocationOne = flightpath.getPath().getArray()[0];
          var lineLocationTwo = flightpath.getPath().getArray()[1];
 
-		 //eerst moet de markers van de geklikte lijn gevonden worden
-		 //daarna kan je de locaties van beide markers gebruiken om de lijn dikker te maken(selecteren)
-		 //en ook de infowindows kunnen geplaats worden op de locatie van de markers.
          var foundMarkerOne;
          var foundMarkerTwo;
 
@@ -158,6 +148,7 @@ function lineClicked(flightpath,lineCount)
         // index 1 = Provincialeweg
         var vanLocatie = _siteNames[lineCount].split("-")[0];
         var naarLocatie = _siteNames[lineCount].split("-")[1];
+
 		//laat infowindows zien op gevonden markers
 		infowindowOne = new google.maps.InfoWindow({
 		content: "van " + vanLocatie
@@ -197,8 +188,7 @@ function getCSVData()
    success:function(data)
    {
     var mst_data = data.split(/\r?\n|\r/);
-	//mst_data.length (Tijdelijk minder ipv alles ivm lagg
-    for(var count = 0; count<50; count++)
+    for(var count = 0; count<mst_data.length; count++)
     {
 	 if(count == 0)
       {
