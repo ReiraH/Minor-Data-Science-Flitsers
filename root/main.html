@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" />
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+<script>
+
+var map;
+var Amersfoort;
+
+var _markers = [];
+var _flightPaths = [];
+var _infoWindows = [];
+var _siteNames = [];
+var _visibleMarkers = [];
+var locationOne;
+var locationTwo;
+
+var markerOne;
+var markerTwo;
+
+var infoWindowOne;
+var infoWindowTwo;
+
+function myMap() {
+  var Amersfoort = new google.maps.LatLng(52.1561113,5.3878266);
+  var mapCanvas = document.getElementById("map");
+  var mapOptions = {center: Amersfoort, zoom: 8};
+  map = new google.maps.Map(mapCanvas,mapOptions);
+}
+
+function drawLine(siteName, startLat,startLong,endLat,endLong)
+{
+	//nieuwe locaties
+    locationOne = new google.maps.LatLng(startLat,startLong);
+    locationTwo = new google.maps.LatLng(endLat,endLong);    
+
+	//Create markers
+	markerOne = new google.maps.Marker({position:locationOne});
+	markerTwo = new google.maps.Marker({position:locationTwo});
+	//Laat markers zien
+	/*markerOne.setMap(map);
+	markerTwo.setMap(map);*/
+	//voeg markers aan de lijst(array) toe
+	_markers.push(markerOne);
+	_markers.push(markerTwo); 
+	
+    var flightPath = new google.maps.Polyline({
+        path: [locationOne, locationTwo],
+        strokeColor: "#0000FF",
+        strokeOpacity: 0.4,
+        strokeWeight: 6
+    });
+    flightPath.setMap(map);
+	_flightPaths.push(flightPath);
+
+    _siteNames.push(siteName);
+	
+}
+function getAverageData(regelnummer)
+{
+  $.ajax({
+   url:"average_multiple_datasets.csv",
+   dataType:"text",
+   success:function(data)
+   {
+		var average_data = data.split(/\r?\n|\r/);
+			//employee_data.length
+		var prevValue;
+		var realCounter = 0;
+        var tableData = '<tr><th>vehicleFlowRate</th><th>averageVehicleSpeed_numberOfInputValues</th><th>averageVehicleSpeed_value</th></tr>';
+		for(var count = 0; count<average_data.length; count++)
+		{
+            tableData += '<tr>';
+			if(count == 1)
+			{
+				prevValue = cell_data[0];
+			}
+			if(count > 1)
+			{
+				if(prevValue == cell_data[0])
+				{
+				}
+				else
+				{
+					realCounter++;
+				}
+				prevValue = cell_data[0];
+			}
+			
+			if(realCounter == regelnummer)
+			{	
+			if(count > 0)
+				{
+                    var cell_data = average_data[count].split(",");
+                    tableData += '<td>' + cell_data[2] +'</td>';
+                    tableData += '<td>' + cell_data[3] +'</td>';
+                    tableData += '<td>' + cell_data[4] +'</td>';
+				}
+			}
+            tableData += '</tr>'
+		}
+		$('#averageDataTable').html(tableData);
+	}
+  });
+}
+
+function lineClicked(flightpath,lineCount)
+{
+	//wis vorige infowindows en markers
+		 if(_infoWindows.length > 0)
+		 {
+			_infoWindows[0].close();
+			_infoWindows[1].close();
+			_infoWindows.splice(0,2);
+		 }
+		 if(_visibleMarkers.length > 0)
+		 {
+			 _visibleMarkers[0].setMap(null);
+			 _visibleMarkers[1].setMap(null);
+			 _visibleMarkers.splice(0,2);
+		 }
+
+		 var lineLocationOne = flightpath.getPath().getArray()[0];
+         var lineLocationTwo = flightpath.getPath().getArray()[1];
+
+		 //eerst moet de markers van de geklikte lijn gevonden worden
+		 //daarna kan je de locaties van beide markers gebruiken om de lijn dikker te maken(selecteren)
+		 //en ook de infowindows kunnen geplaats worden op de locatie van de markers.
+         var foundMarkerOne;
+         var foundMarkerTwo;
+
+         // zoeken naar markers object in array zodat we weten welke marker hoort bij punt A ofzo
+		for(var i = 0; i < _markers.length;i++)
+        {
+            var markerPos = _markers[i].getPosition();
+            if(markerPos == lineLocationOne)
+            {
+                foundMarkerOne = _markers[i];
+            }
+            if(markerPos == lineLocationTwo)
+            {
+                foundMarkerTwo = _markers[i];
+            }
+        }
+		
+		foundMarkerOne.setMap(map);
+        foundMarkerTwo.setMap(map);
+		_visibleMarkers.push(foundMarkerOne);
+		_visibleMarkers.push(foundMarkerTwo);
+        //Komt binnen : Algeraweg-Provincialeweg
+        // na split functie wordt het een array : [Algeraweg,Provincialeweg]
+        // index 0 = Algeraweg
+        // index 1 = Provincialeweg
+        var vanLocatie = _siteNames[lineCount].split("-")[0];
+        var naarLocatie = _siteNames[lineCount].split("-")[1];
+		//laat infowindows zien op gevonden markers
+		infowindowOne = new google.maps.InfoWindow({
+		content: "van " + vanLocatie
+		});
+		infowindowTwo = new google.maps.InfoWindow({
+		content: "naar " + naarLocatie
+		});
+		
+		infowindowOne.open(map,foundMarkerOne);
+		infowindowTwo.open(map,foundMarkerTwo);
+		
+		_infoWindows.push(infowindowOne);
+		_infoWindows.push(infowindowTwo);
+		
+}
+
+function createClickListener()
+{
+	for (var i = 0; i < _flightPaths.length; i++)
+	{
+        var line = _flightPaths[i];
+		google.maps.event.addListener(line, 'click', (function(line, i) {
+			return function() {
+				lineClicked(line,i);
+                getAverageData(i);
+			}
+		}) (line, i));
+        _flightPaths[i] = line;
+	}
+}
+
+function getCSVData()
+{
+  $.ajax({
+   url:"MST.csv",
+   dataType:"text",
+   success:function(data)
+   {
+    var mst_data = data.split(/\r?\n|\r/);
+	//mst_data.length (Tijdelijk minder ipv alles ivm lagg
+    for(var count = 0; count<50; count++)
+    {
+	 if(count == 0)
+      {
+       //header skippen
+      }
+	  else
+	  {
+	    var cell_data = mst_data[count].split(",");
+		var siteName = cell_data[3];
+        //if startlat of andere coordinaat leeg is -> doe niks 
+        //else drawLine
+	    var startLat = cell_data[4];
+		var endLat = cell_data[6];
+		var startLong = cell_data[5];
+		var endLong = cell_data[7];
+		drawLine(siteName, startLat,startLong,endLat,endLong);
+	  }
+    }
+   }
+ });
+ $( document ).ajaxComplete(function() {
+  createClickListener();
+});
+}
+
+
+$(document).ready(function(){
+    getCSVData();
+  $('#refresh').click(function(){
+    getCSVData();
+  });
+});
+
+</script>
+
+<html>
+ <head>
+  <title>Rhea Hau - Data Science Project</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" />
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+ 
+  <style>
+    table, th, td {
+        border: 1px solid black;
+        border-collapse: collapse;
+    }
+    th, td {
+        padding: 5px;
+        text-align: left;
+    }
+    table#t01 {
+        width: 100%;    
+        background-color: #f1f1c1;
+    }
+    </style>
+
+</head>
+ <body>
+    <div align="center">
+        <button type="button" name="refresh" id="refresh" class="btn btn-info">Refreshination desu</button>
+    </div>
+	<div id="map" style="width:50%;height:700px;float:left;"></div>
+    <div style="width:50%;height:700px;float:left;">
+        <table id="averageDataTable"style="width:100%">
+          </table>
+    </div>
+	</body>
+</html>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCNDsmJLmo_4EqpzBQQlyCoFbL9bOs8mEM&callback=myMap"></script>

@@ -1,0 +1,5 @@
+[Fri Jan 19 22:48:49.524053 2018] [mpm_winnt:notice] [pid 9764:tid 808] AH00455: Apache/2.4.6 (Win32) PHP/5.4.17 configured -- resuming normal operations
+[Fri Jan 19 22:48:49.524053 2018] [mpm_winnt:notice] [pid 9764:tid 808] AH00456: Apache Lounge VC10 Server built: Jul 16 2013 11:15:41
+[Fri Jan 19 22:48:49.524053 2018] [core:notice] [pid 9764:tid 808] AH00094: Command line: 'C:\\Users\\RHEAASUS\\OneDrive - Hogeschool Rotterdam\\Technsiche Informatica TI4A 17-18 Periode 2\\CMIBOD012P Data science Praktijk 2 (2017-2018)\\USBWebserver v8.6/apache2/bin/httpd_usbwv8.exe -d C:/Users/RHEAASUS/OneDrive - Hogeschool Rotterdam/Technsiche Informatica TI4A 17-18 Periode 2/CMIBOD012P Data science Praktijk 2 (2017-2018)/USBWebserver v8.6/apache2'
+[Fri Jan 19 22:48:49.555305 2018] [mpm_winnt:notice] [pid 9764:tid 808] AH00418: Parent: Created child process 10132
+[Fri Jan 19 22:48:50.590307 2018] [mpm_winnt:notice] [pid 10132:tid 824] AH00354: Child: Starting 64 worker threads.
