@@ -305,7 +305,7 @@
 
         function updateTable(regel)
         {
-            for(var count = 0; count<300; count++)
+            for(var count = 0; count<allMstData.length; count++)
             {
                 if(count == regel)
                 {
@@ -348,7 +348,7 @@
            {
             var mst_data = data.split(/\r?\n|\r/);
             allMstData = mst_data;
-            for(var count = 0; count<300; count++)
+            for(var count = 0; count<allMstData.length; count++)
             {
              if(count == 0)
               {
