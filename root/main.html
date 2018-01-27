@@ -5,258 +5,596 @@
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 
 <script>
-var map;
-var Amersfoort;
 
-var _markers = [];
-var _flightPaths = [];
-var _infoWindows = [];
-var _siteNames = [];
-var _visibleMarkers = [];
-var locationOne;
-var locationTwo;
+        var map;
+        var Amersfoort;
+        
+        var _markers = [];
+        var _flightPaths = [];
+        var _infoWindows = [];
+        var _siteNames = [];
+        var _visibleMarkers = [];
+        var locationOne;
+        var locationTwo;
+        var gauge;
+        var segDisplay;
+        var segDisplay2;
+        var markerOne;
+        var markerTwo;
+        var lineLocationOne;
+        var lineLocationTwo;
+        var allMstData;
+        var allMstDataRealTime;
+        
+        var infoWindowOne;
+        var infoWindowTwo;
+        var cell_dataAvarage;
+        var cell_dataAvarage2;
+        
+        var gemiddeldeKmStand = 0;
+        var gemiddeldeKmStand2 = 0;
 
-var markerOne;
-var markerTwo;
-
-var infoWindowOne;
-var infoWindowTwo;
-
-function myMap() {
-  var Amersfoort = new google.maps.LatLng(52.1561113,5.3878266);
-  var mapCanvas = document.getElementById("map");
-  var mapOptions = {center: Amersfoort, zoom: 8};
-  map = new google.maps.Map(mapCanvas,mapOptions);
-}
-
-function drawLine(siteName, startLat,startLong,endLat,endLong)
-{
-	//nieuwe locaties
-    locationOne = new google.maps.LatLng(startLat,startLong);
-    locationTwo = new google.maps.LatLng(endLat,endLong);    
-
-	//Create markers
-	markerOne = new google.maps.Marker({position:locationOne});
-	markerTwo = new google.maps.Marker({position:locationTwo});
-
-	//voeg markers aan de lijst(array) toe
-	_markers.push(markerOne);
-	_markers.push(markerTwo); 
-	
-    var flightPath = new google.maps.Polyline({
-        path: [locationOne, locationTwo],
-        strokeColor: "#0000FF",
-        strokeOpacity: 0.4,
-        strokeWeight: 6
-    });
-    flightPath.setMap(map);
-	_flightPaths.push(flightPath);
-
-    _siteNames.push(siteName);
-	
-}
-function getAverageData(regelnummer)
-{
-  $.ajax({
-   url:"average_multiple_datasets.csv",
-   dataType:"text",
-   success:function(data)
-   {
-		var average_data = data.split(/\r?\n|\r/);
-		var prevValue;
-		var realCounter = 0;
-        var tableData = '<tr><th>vehicleFlowRate</th><th>averageVehicleSpeed_numberOfInputValues</th><th>averageVehicleSpeed_value</th></tr>';
-		for(var count = 0; count<average_data.length; count++)
-		{
-            tableData += '<tr>';
-			if(count == 1)
-			{
-				prevValue = cell_data[0];
-			}
-			if(count > 1)
-			{
-				if(prevValue == cell_data[0])
-				{
-				}
-				else
-				{
-					realCounter++;
-				}
-				prevValue = cell_data[0];
-			}
-			
-			if(realCounter == regelnummer)
-			{	
-			if(count > 0)
-				{
-                    var cell_data = average_data[count].split(",");
-                    tableData += '<td>' + cell_data[2] +'</td>';
-                    tableData += '<td>' + cell_data[3] +'</td>';
-                    tableData += '<td>' + cell_data[4] +'</td>';
-				}
-			}
-            tableData += '</tr>'
-		}
-		$('#averageDataTable').html(tableData);
-	}
-  });
-}
-
-function lineClicked(flightpath,lineCount)
-{
-	//wis vorige infowindows en markers
-		 if(_infoWindows.length > 0)
-		 {
-			_infoWindows[0].close();
-			_infoWindows[1].close();
-			_infoWindows.splice(0,2);
-		 }
-		 if(_visibleMarkers.length > 0)
-		 {
-			 _visibleMarkers[0].setMap(null);
-			 _visibleMarkers[1].setMap(null);
-			 _visibleMarkers.splice(0,2);
-		 }
-
-		 var lineLocationOne = flightpath.getPath().getArray()[0];
-         var lineLocationTwo = flightpath.getPath().getArray()[1];
-
-         var foundMarkerOne;
-         var foundMarkerTwo;
-
-         // zoeken naar markers object in array zodat we weten welke marker hoort bij punt A ofzo
-		for(var i = 0; i < _markers.length;i++)
+        function myMap() {
+          var Amersfoort = new google.maps.LatLng(52.1561113,5.3878266);
+          var mapCanvas = document.getElementById("map");
+          var mapOptions = {center: Amersfoort, zoom: 8};
+          map = new google.maps.Map(mapCanvas,mapOptions);
+        }
+        
+        function drawLine(siteName, startLat,startLong,endLat,endLong)
         {
-            var markerPos = _markers[i].getPosition();
-            if(markerPos == lineLocationOne)
-            {
-                foundMarkerOne = _markers[i];
+            //nieuwe locaties
+            locationOne = new google.maps.LatLng(startLat,startLong);
+            locationTwo = new google.maps.LatLng(endLat,endLong);    
+        
+            //Create markers
+            markerOne = new google.maps.Marker({position:locationOne});
+            markerTwo = new google.maps.Marker({position:locationTwo});
+        
+            //voeg markers aan de lijst(array) toe
+            _markers.push(markerOne);
+            _markers.push(markerTwo); 
+            
+            var flightPath = new google.maps.Polyline({
+                path: [locationOne, locationTwo],
+                strokeColor: "#0000FF",
+                strokeOpacity: 0.4,
+                strokeWeight: 6
+            });
+            flightPath.setMap(map);
+            _flightPaths.push(flightPath);
+        
+            _siteNames.push(siteName);
+            
+        }
+        function updateGauge()
+        {
+                segDisplay.value(gemiddeldeKmStand.toString());
+                gauge.value(gemiddeldeKmStand);
+        }
+
+        function updateGauge2()
+        {
+                segDisplay2.value(gemiddeldeKmStand2.toString());
+                gauge2.value(gemiddeldeKmStand2);
+        }
+        
+        function getAverageData(regelnummer)
+        {
+          $.ajax({
+           url:"average_multiple_datasets.csv",
+           dataType:"text",
+           success:function(data)
+           {
+                var average_data = data.split(/\r?\n|\r/);
+                var prevValue;
+                var realCounter = 0;
+                var tableData = '';
+                var kmStand = [];
+                for(var count = 0; count<average_data.length; count++)
+                {
+                    cell_dataAvarage = average_data[count].split(",");
+                    tableData += '<tr>';
+                    if(count == 1)
+                    {
+                        prevValue = cell_dataAvarage[0];
+                    }
+                    if(count > 1)
+                    {
+                        if(prevValue == cell_dataAvarage[0])
+                        {
+                        }
+                        else
+                        {
+                            realCounter++;
+                        }
+                        prevValue = cell_dataAvarage[0];
+                    }
+                    if(realCounter == regelnummer)
+                    {	
+                        if(count > 0)
+                        {                    
+                            kmStand.push(parseFloat(cell_dataAvarage[4]))
+                            
+                            
+                        }
+                    }
+                    //als de regel die nodig is gevonden.. dan ga je stoppen met zoeken
+                    if(realCounter > regelnummer)
+                    {
+                        break;
+                    }
+                    tableData += '</tr>'
+                }
+        
+                var onthoudKmStand = 0.0;
+        
+                kmStandL = kmStand.length;
+        
+                var isNotANumber;
+        
+                console.log(' getting there');
+                for (k = 1; k < kmStandL; k++)
+                {
+                    var valid = Number(kmStand[k]);
+        
+                    if (valid) {
+                         onthoudKmStand += kmStand[k];
+                    }
+                   
+                }
+                
+                gemiddeldeKmStand = (onthoudKmStand  / kmStand.length);
+                if (gemiddeldeKmStand > 0)
+                {
+                    tableData += '<td>' + gemiddeldeKmStand.toString() +'</td>';
+                }
+                else
+                {
+                    tableData += '<td>' + "Er zijn geen waardes van deze lijn" +'</td>';
+                }
+                //$('#averageDataTable').html(tableData);
+                updateGauge();
             }
-            if(markerPos == lineLocationTwo)
+          });
+        }
+
+        function getAverageData2(regelnummer)
+        {
+          $.ajax({
+           url:"average_multiple_datasets_vandaag.csv",
+           dataType:"text",
+           success:function(data2)
+           {
+                var average_data = data2.split(/\r?\n|\r/);
+                var prevValue;
+                var realCounter = 0;
+                var tableData = '';
+                var kmStand2 = [];
+                for(var count = 0; count<average_data.length; count++)
+                {
+                    cell_dataAvarage2 = average_data[count].split(",");
+                    tableData += '<tr>';
+                    if(count == 1)
+                    {
+                        prevValue = cell_dataAvarage2[0];
+                    }
+                    if(count > 1)
+                    {
+                        if(prevValue == cell_dataAvarage2[0])
+                        {
+                        }
+                        else
+                        {
+                            realCounter++;
+                        }
+                        prevValue = cell_dataAvarage2[0];
+                    }
+                    if(realCounter == regelnummer)
+                    {	
+                        if(count > 0)
+                        {                    
+                            kmStand2.push(parseFloat(cell_dataAvarage2[4]))
+                            
+                            
+                        }
+                    }
+                    //als de regel die nodig is gevonden.. dan ga je stoppen met zoeken
+                    if(realCounter > regelnummer)
+                    {
+                        break;
+                    }
+                    tableData += '</tr>'
+                }
+        
+                var onthoudKmStand2 = 0.0;
+        
+                kmStandL2 = kmStand2.length;
+        
+                var isNotANumber;
+        
+                console.log(' getting there');
+                for (k = 1; k < kmStandL2; k++)
+                {
+                    var valid = Number(kmStand2[k]);
+        
+                    if (valid) {
+                         onthoudKmStand2 += kmStand2[k];
+                    }
+                   
+                }
+                
+                gemiddeldeKmStand2 = (onthoudKmStand2  / kmStand2.length);
+                if (gemiddeldeKmStand2 > 0)
+                {
+                    tableData += '<td>' + gemiddeldeKmStand2.toString() +'</td>';
+                }
+                else
+                {
+                    tableData += '<td>' + "Er zijn geen waardes van deze lijn" +'</td>';
+                }
+                //$('#averageDataTable').html(tableData);
+                updateGauge2();
+            }
+          });
+        }
+        
+        function lineClicked(flightpath,lineCount)
+        {
+            //wis vorige infowindows en markers
+                 if(_infoWindows.length > 0)
+                 {
+                    _infoWindows[0].close();
+                    _infoWindows[1].close();
+                    _infoWindows.splice(0,2);
+                 }
+                 if(_visibleMarkers.length > 0)
+                 {
+                     _visibleMarkers[0].setMap(null);
+                     _visibleMarkers[1].setMap(null);
+                     _visibleMarkers.splice(0,2);
+                 }
+        
+                 lineLocationOne = flightpath.getPath().getArray()[0];
+                 lineLocationTwo = flightpath.getPath().getArray()[1];
+        
+                 var foundMarkerOne;
+                 var foundMarkerTwo;
+        
+                 // zoeken naar markers object in array zodat we weten welke marker hoort bij punt A ofzo
+                for(var i = 0; i < _markers.length;i++)
+                {
+                    var markerPos = _markers[i].getPosition();
+                    if(markerPos == lineLocationOne)
+                    {
+                        foundMarkerOne = _markers[i];
+                    }
+                    if(markerPos == lineLocationTwo)
+                    {
+                        foundMarkerTwo = _markers[i];
+                    }
+                }
+                
+                foundMarkerOne.setMap(map);
+                foundMarkerTwo.setMap(map);
+                _visibleMarkers.push(foundMarkerOne);
+                _visibleMarkers.push(foundMarkerTwo);
+        
+                //Komt binnen : Algeraweg-Provincialeweg
+                // na split functie wordt het een array : [Algeraweg,Provincialeweg]
+                // index 0 = Algeraweg
+                // index 1 = Provincialeweg
+                var vanLocatie = _siteNames[lineCount].split("-")[0];
+                var naarLocatie = _siteNames[lineCount].split("-")[1];
+        
+                //laat infowindows zien op gevonden markers
+                infowindowOne = new google.maps.InfoWindow({
+                content: "van " + vanLocatie
+                });
+                infowindowTwo = new google.maps.InfoWindow({
+                content: "naar " + naarLocatie
+                });
+                
+                infowindowOne.open(map,foundMarkerOne);
+                infowindowTwo.open(map,foundMarkerTwo);
+                
+                _infoWindows.push(infowindowOne);
+                _infoWindows.push(infowindowTwo);
+                
+        }
+
+        function updateTable(regel)
+        {
+            for(var count = 0; count<300; count++)
             {
-                foundMarkerTwo = _markers[i];
+                if(count == regel)
+                {
+                    var cell_data = allMstData[count].split(",");
+                    var LocNames = cell_data[3].split("-")
+                    drawTable(LocNames[0], LocNames[1], cell_dataAvarage[6], cell_data[0], cell_data[4], cell_data[5], cell_data[6], cell_data[7]);
+                    
+                    var cell_dataRealTime = allMstDataRealTime[count].split(",");
+                    drawTable2(LocNames[0], LocNames[1], cell_dataAvarage2[6], cell_dataRealTime[0], cell_dataRealTime[4], cell_dataRealTime[5], cell_dataRealTime[6], cell_dataRealTime[7]);
+                }
+            }
+
+
+        /*    console.log(line.getPath().getArray()[0]); */
+        }
+        
+        function createClickListener()
+        {
+            for (var i = 0; i < _flightPaths.length; i++)
+            {
+                var line = _flightPaths[i];
+                google.maps.event.addListener(line, 'click', (function(line, i) {
+                    return function() {
+                        lineClicked(line,i);
+                        getAverageData(i);
+                        getAverageData2(i);
+                        updateTable(i);
+                    }
+                }) (line, i));
+                _flightPaths[i] = line;
             }
         }
-		
-		foundMarkerOne.setMap(map);
-        foundMarkerTwo.setMap(map);
-		_visibleMarkers.push(foundMarkerOne);
-		_visibleMarkers.push(foundMarkerTwo);
-        //Komt binnen : Algeraweg-Provincialeweg
-        // na split functie wordt het een array : [Algeraweg,Provincialeweg]
-        // index 0 = Algeraweg
-        // index 1 = Provincialeweg
-        var vanLocatie = _siteNames[lineCount].split("-")[0];
-        var naarLocatie = _siteNames[lineCount].split("-")[1];
+        
+        function getCSVData()
+        {
+          $.ajax({
+           url:"MST.csv",
+           dataType:"text",
+           success:function(data)
+           {
+            var mst_data = data.split(/\r?\n|\r/);
+            allMstData = mst_data;
+            for(var count = 0; count<300; count++)
+            {
+             if(count == 0)
+              {
+               //header skippen
+              }
+              else
+              {
+                var cell_data = mst_data[count].split(",");
+                var siteName = cell_data[3];
+                //if startlat of andere coordinaat leeg is -> doe niks 
+                //else drawLine
+                var startLat = cell_data[4];
+                var endLat = cell_data[6];
+                var startLong = cell_data[5];
+                var endLong = cell_data[7];
+                drawLine(siteName, startLat,startLong,endLat,endLong);
+              }
+            }
+           }
+         });
+         $( document ).ajaxComplete(function() {
+          createClickListener();
+        });
+        }
 
-		//laat infowindows zien op gevonden markers
-		infowindowOne = new google.maps.InfoWindow({
-		content: "van " + vanLocatie
-		});
-		infowindowTwo = new google.maps.InfoWindow({
-		content: "naar " + naarLocatie
-		});
-		
-		infowindowOne.open(map,foundMarkerOne);
-		infowindowTwo.open(map,foundMarkerTwo);
-		
-		_infoWindows.push(infowindowOne);
-		_infoWindows.push(infowindowTwo);
-		
-}
+        function getCSVDataRealTime()
+        {
+          $.ajax({
+           url:"MST_vandaag.csv",
+           dataType:"text",
+           success:function(data)
+           {
+                var mst_data = data.split(/\r?\n|\r/);
+                allMstDataRealTime = mst_data;
+           }
+         });
+        }
+        
+        $(document).ready(function(){
+            var svg = d3.select("#speedometer")
+                        .append("svg:svg")
+                        .attr("width", 400)
+                        .attr("height", 400);
 
-function createClickListener()
-{
-	for (var i = 0; i < _flightPaths.length; i++)
-	{
-        var line = _flightPaths[i];
-		google.maps.event.addListener(line, 'click', (function(line, i) {
-			return function() {
-				lineClicked(line,i);
-                getAverageData(i);
-			}
-		}) (line, i));
-        _flightPaths[i] = line;
-	}
-}
+        
+        
+                gauge = iopctrl.arcslider()
+                        .radius(120)
+                        .events(false)
+                        .indicator(iopctrl.defaultGaugeIndicator);
+                gauge.axis().orient("in")
+                        .normalize(true)
+                        .ticks(12)
+                        .tickSubdivide(3)
+                        .tickSize(10, 8, 10)
+                        .tickPadding(5)
+                        .scale(d3.scale.linear()
+                                .domain([0, 160])
+                                .range([-3*Math.PI/4, 3*Math.PI/4]));
+        
+                segDisplay = iopctrl.segdisplay()
+                        .width(80)
+                        .digitCount(6)
+                        .negative(false)
+                        .decimals(0);
+        
+                        svg.append("g")
+                                .attr("class", "segdisplay")
+                                .attr("transform", "translate(130, 200)")
+                                .call(segDisplay);
+                
+                        svg.append("g")
+                                .attr("class", "gauge")
+                                .call(gauge);
+        
+                                var svg2 = d3.select("#speedometer2")
+                        .append("svg:svg")
+                        .attr("width", 400)
+                        .attr("height", 400);
 
-function getCSVData()
-{
-  $.ajax({
-   url:"MST.csv",
-   dataType:"text",
-   success:function(data)
-   {
-    var mst_data = data.split(/\r?\n|\r/);
-    for(var count = 0; count<mst_data.length; count++)
-    {
-	 if(count == 0)
-      {
-       //header skippen
-      }
-	  else
-	  {
-	    var cell_data = mst_data[count].split(",");
-		var siteName = cell_data[3];
-        //if startlat of andere coordinaat leeg is -> doe niks 
-        //else drawLine
-	    var startLat = cell_data[4];
-		var endLat = cell_data[6];
-		var startLong = cell_data[5];
-		var endLong = cell_data[7];
-		drawLine(siteName, startLat,startLong,endLat,endLong);
-	  }
-    }
-   }
- });
- $( document ).ajaxComplete(function() {
-  createClickListener();
-});
-}
+                gauge2 = iopctrl.arcslider()
+                        .radius(120)
+                        .events(false)
+                        .indicator(iopctrl.defaultGaugeIndicator);
+                gauge2.axis().orient("in")
+                        .normalize(true)
+                        .ticks(12)
+                        .tickSubdivide(3)
+                        .tickSize(10, 8, 10)
+                        .tickPadding(5)
+                        .scale(d3.scale.linear()
+                                .domain([0, 160])
+                                .range([-3*Math.PI/4, 3*Math.PI/4]));
+        
+                segDisplay2 = iopctrl.segdisplay()
+                        .width(80)
+                        .digitCount(6)
+                        .negative(false)
+                        .decimals(0);
 
+        svg2.append("g")
+                .attr("class", "segdisplay")
+                .attr("transform", "translate(130, 200)")
+                .call(segDisplay2);
 
-$(document).ready(function(){
-    getCSVData();
-  $('#refresh').click(function(){
-    getCSVData();
-  });
-});
-
-</script>
+        svg2.append("g")
+                .attr("class", "gauge")
+                .call(gauge2);
+            getCSVData();
+            getCSVDataRealTime();
+          $('#refresh').click(function(){
+            getCSVData();
+            getCSVDataRealTime();
+          });
+        });
+        
+        </script>
 
 <html>
  <head>
-  <title>Rhea Hau - Data Science Project</title>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" />
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
- 
-  <style>
-    table, th, td {
-        border: 1px solid black;
-        border-collapse: collapse;
-    }
-    th, td {
-        padding: 5px;
-        text-align: left;
-    }
-    table#t01 {
-        width: 100%;    
-        background-color: #f1f1c1;
-    }
-    </style>
+  <title>Project Traffic Speed Traps | Minor Data Science</title>
+
+    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" /> -->
+    <link rel="stylesheet" href="/src/styles/main.css" type="text/css">
+    <link rel="stylesheet" href="/src/styles/gauge.css" type="text/css">
+    <link rel='stylesheet' href='http://fonts.googleapis.com/css?family=Play:700,400' type='text/css'>
+    
+    <!-- <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCNDsmJLmo_4EqpzBQQlyCoFbL9bOs8mEM&callback=myMap"></script> -->
+    <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script> -->
+    <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script> -->
+    <script type="text/javascript" src="http://iop.io/js/vendor/d3.v3.min.js"></script>
+    <script type="text/javascript" src="http://iop.io/js/vendor/polymer/PointerEvents/pointerevents.js"></script>
+    <script type="text/javascript" src="http://iop.io/js/vendor/polymer/PointerGestures/pointergestures.js"></script>
+    <script type="text/javascript" src="http://iop.io/js/iopctrl.js"></script>
+    <!-- <script type="text/javascript" src="/src/js/map.js"></script> -->
+
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+      google.charts.load('current', {'packages':['table']});
+      google.charts.setOnLoadCallback(drawTable);
+      google.charts.setOnLoadCallback(drawTable2);
+
+      function drawTable(streetNameStart, streetNameEnd, date, id, startX, startY, endX, endY) {
+        var data = new google.visualization.DataTable();
+        data.addColumn('string', 'Name');
+        data.addColumn('string', 'Value');
+        data.addRows([
+            ['Startpoint', streetNameStart],
+            ['Endpoint', streetNameEnd],
+            ['Date', date],
+            ['ID', id],
+            ['Startpoint_X', startX],
+            ['Startpoint_Y', startY],
+            ['Endpoint_X', endX],
+            ['Endpoint_Y', endY]
+        ]);
+
+        var table = new google.visualization.Table(document.getElementById('table_div'));
+
+        table.draw(data, {showRowNumber: false, width: '100%', height: '100%'});
+      }
+
+      function drawTable2(streetNameStart, streetNameEnd, date, id, startX, startY, endX, endY) {
+        var data = new google.visualization.DataTable();
+        data.addColumn('string', 'Name');
+        data.addColumn('string', 'Value');
+        data.addRows([
+            ['Startpoint', streetNameStart],
+            ['Endpoint', streetNameEnd],
+            ['Date', date],
+            ['ID', id],
+            ['Startpoint_X', startX],
+            ['Startpoint_Y', startY],
+            ['Endpoint_X', endX],
+            ['Endpoint_Y', endY]
+        ]);
+
+        var table = new google.visualization.Table(document.getElementById('table_div2'));
+
+        table.draw(data, {showRowNumber: false, width: '100%', height: '100%'});
+      }
+    </script>
 
 </head>
  <body>
     <div align="center">
-        <button type="button" name="refresh" id="refresh" class="btn btn-info">Click to refreh</button>
+        <th>
+            <h1>Group 8 - Project Traffic Speed Traps</h1>
+        </th>
     </div>
-	<div id="map" style="width:50%;height:700px;float:left;"></div>
+        <div align = "center">
+            School: Rotterdam University of Applied Sciences | Education: Technische Informatica | Minor: Data Science 
+            <br>
+            Group #8 | Students: Patrick Kooij ?????@hr.nl, Wouter Volders ?????@hr.nl, Rhea Hau 0850154@hr.nl | Date turned in: 31th January 2018
+        </div>
+    </div>
+    <div id="map" style="width:50%;height:700px;float:left;"></div>
+    
     <div style="width:50%;height:700px;float:left;">
-        <table id="averageDataTable"style="width:100%">
+        <table width="50%" border="1">
+            <tr><td style="padding:0.5cm;" colspan="3"></td></tr>
+            <tr style="padding-left: 10px;">
+                <td align="center" bgcolor="515151">
+                        <div id="table_div"></div>
+                </td>
+                <td align="center" bgcolor="515151">
+                        <div align="center" id="speedometer" style="width:230px;height:300px;">
+                                
+                            </div>
+                </td>
+            </tr>
+            <tr>
+                <td align="center" bgcolor="515151">
+                        <div id="table_div2"></div>
+                </td>
+                <td align="center" bgcolor="515151">
+                    <div align="center" id="speedometer2" style="width:230px;height:300px;">
+                                <!-- <span id="speedometer2"></span> -->
+                    </div>
+                    <div align="center" id="dsfsf" style="width:330px;height:5px;">
+                        </div>
+                </td>
+            </tr>
+
+            <tr><td style="padding:0.5cm;" colspan="3"></td></tr>
           </table>
     </div>
+    <footer>
+        <center>
+            Sources: 
+            <a href="https://github.com/ReiraH/Minor-Data-Science-Flitsers" target="_blank">
+                <i>
+                    https://github.com/ReiraH/Minor-Data-Science-Flitsers
+                </i>
+            </a>
+             | e-mail address: 
+             <a href="mailto: 0850154@hr.nl">
+                 <i>
+                     0850154@hr.nl
+                    </i>
+                </a> 
+                for more information | Since 2018
+        </center>
+    </footer>
+
 	</body>
 </html>
 
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCNDsmJLmo_4EqpzBQQlyCoFbL9bOs8mEM&callback=myMap"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCNDsmJLmo_4EqpzBQQlyCoFbL9bOs8mEM&callback=myMap"></script> 
